@@ -24,3 +24,27 @@ AD_patient_codes <- AD_patient_claims %>% filter(ICD9_DGNS_CD_1 != "") %>% filte
 
 AD_num_claims_by_patient <- AD_patient_claims %>% group_by(DESYNPUF_ID) %>% summarize(count = n())
 summary(AD_num_claims_by_patient$count)
+
+AD_claim_codes <- AD_patient_claims %>% select(Patient_ID = DESYNPUF_ID, Diagnosis = ICD9_DGNS_CD_1) %>%
+  filter(Diagnosis != "") %>% filter(Diagnosis != "OTHER")
+
+
+non_AD <- outpatient %>% select(DESYNPUF_ID) %>% filter(!(DESYNPUF_ID %in% AD$DESYNPUF_ID)) %>% unique()
+non_AD_claims <- outpatient %>% filter(!(DESYNPUF_ID %in% AD$DESYNPUF_ID))
+
+
+## Let's take a sample of 50 AD patients, 50 other patients
+
+set.seed(455)
+model_AD_IDs <- sample_n(AD, 50)
+model_non_IDs <- sample_n(non_AD, 50)
+
+model_AD <- AD_patient_claims %>% filter(DESYNPUF_ID %in% model_AD_IDs$DESYNPUF_ID)
+model_non <- non_AD_claims %>% filter(DESYNPUF_ID %in% model_non_IDs$DESYNPUF_ID)
+
+
+model_AD_codes <- model_AD %>% select(Patient_ID = DESYNPUF_ID, Diagnosis = ICD9_DGNS_CD_1) %>% 
+  filter(Diagnosis != "") %>% filter(Diagnosis != "OTHER")
+
+model_non_codes <- model_non %>% select(Patient_ID = DESYNPUF_ID, Diagnosis = ICD9_DGNS_CD_1) %>% 
+  filter(Diagnosis != "") %>% filter(Diagnosis != "OTHER")
