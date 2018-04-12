@@ -8,6 +8,8 @@
 # page 7, page 
 library(tidyverse)
 library(data.table)
+library(icd)
+
 
 suppressWarnings(
   outpatient <- fread("outpatient claims.csv")
@@ -21,6 +23,11 @@ AD_patient_claims <- outpatient %>% filter(DESYNPUF_ID %in% AD$DESYNPUF_ID)
 
 AD_patient_codes <- AD_patient_claims %>% filter(ICD9_DGNS_CD_1 != "") %>% filter(ICD9_DGNS_CD_1 != "OTHER") %>% 
   group_by(ICD9_DGNS_CD_1) %>% summarize(count = n()) %>% arrange(desc(count))
+
+# just to show the icd package
+AD_top_20 <- top_n(AD_patient_codes, 20)
+
+AD_top_20$ICD9_DGNS_CD_1 <- AD_top_20$ICD9_DGNS_CD_1 %>% map(icd_explain)
 
 AD_num_claims_by_patient <- AD_patient_claims %>% group_by(DESYNPUF_ID) %>% summarize(count = n())
 summary(AD_num_claims_by_patient$count)
@@ -48,3 +55,6 @@ model_AD_codes <- model_AD %>% select(Patient_ID = DESYNPUF_ID, Diagnosis = ICD9
 
 model_non_codes <- model_non %>% select(Patient_ID = DESYNPUF_ID, Diagnosis = ICD9_DGNS_CD_1) %>% 
   filter(Diagnosis != "") %>% filter(Diagnosis != "OTHER")
+
+
+
