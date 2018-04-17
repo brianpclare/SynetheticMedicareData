@@ -94,4 +94,15 @@ library(onehot)
 encoder <- onehot(distinct_diagnoses, stringsAsFactors = TRUE, max_levels = 527)
 diagnoses_encoded <- as.tibble(predict(encoder, total_model))
 
-total_encoded <- total_model %>% ungroup() %>% select(AD) %>% bind_cols(diagnoses_encoded)
+model_list <- total_model %>% ungroup() %>% split(.$Patient_ID)
+
+total_model$AD <- ifelse(total_model$AD, 1, 0)
+
+model_labels <- total_model %>% summarize(AD = max(AD))
+
+for(i in 1:length(model_list)){
+  model_labels[i] <- model_list[i]$AD[1]
+  # model_list[i] <- model_list[i] %>% dplyr::select(Diagnosis)
+  }
+
+
