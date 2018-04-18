@@ -66,9 +66,9 @@ myfunction <- function(PatientX){
 #Repeat the process on each patient using "lapply"
 AllPatient<-lapply(split, myfunction)
 model_AD_patient_claims <- bind_rows(AllPatient)
-model_AD_patient_claims$AD <- TRUE
+model_AD_patient_claims$AD <- 1
 
-model_non_codes$AD <- FALSE
+model_non_codes$AD <- 0
 
 
 # Step 3, for all patients
@@ -86,23 +86,42 @@ rm(list = c("outpatient", "non_AD_claims", "non_AD", "model_non_codes", "model_n
 
 distinct_diagnoses <- total_model %>% ungroup %>% select(Diagnosis) %>% unique()
 
-# So there are 527 unique diagnosis codes, each one needs to be a 527D vector 
+distinct_diagnoses$index <- 1:length(distinct_diagnoses$Diagnosis)
 
-# install.packages("onehot")
-library(onehot)
+# So there are 527 unique diagnosis codes, which will be indexed from 1 to 527 
 
-encoder <- onehot(distinct_diagnoses, stringsAsFactors = TRUE, max_levels = 527)
-diagnoses_encoded <- as.tibble(predict(encoder, total_model))
+model_AD_IDs <- total_model %>% filter(AD == 1) %>% select(Patient_ID) %>% unique()
+model_non_IDs <- total_model %>% filter(AD == 0) %>% select(Patient_ID) %>% unique()
 
-model_list <- total_model %>% ungroup() %>% split(.$Patient_ID)
 
-total_model$AD <- ifelse(total_model$AD, 1, 0)
+for(i in 1:length(total_model$Diagnosis)){
+  x <- total_model$Diagnosis[i]
+  y <- distinct_diagnoses$index[distinct_diagnoses$Diagnosis == x]
+  total_model$Diagnosis[i] <- y
+}
 
-model_labels <- total_model %>% summarize(AD = max(AD))
+total_model <- total_model %>% select(-Date)
 
-for(i in 1:length(model_list)){
-  model_labels[i] <- model_list[i]$AD[1]
-  # model_list[i] <- model_list[i] %>% dplyr::select(Diagnosis)
+y_train <- total_model %>% summarize(n = max(AD)) %>% ungroup() %>% select(-Patient_ID) %>%
+  unlist() %>% unname()
+
+claim_counts <- total_model %>% select(Patient_ID) %>% summarize(count = n())
+max_claims <- max(claim_counts$count)
+
+split_model <- total_model %>% split(.$Patient_ID) %>% unname()
+
+for(i in 1:length(split_model)){
+  split_model[[i]] <- split_model[[i]] %>% ungroup() %>% select(Diagnosis) %>% t()
+  
+  while(length(split_model[[i]]) < max_claims){
+    split_model[[i]] <- append(split_model[[i]], 0)
   }
+  
+}
+
+input_train <- do.call(rbind, split_model)
+
+
+
 
 
