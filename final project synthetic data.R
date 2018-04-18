@@ -16,6 +16,7 @@ suppressWarnings(
 
 
 
+
 AD <- outpatient %>% filter(ICD9_DGNS_CD_1 == "3310") %>% select(DESYNPUF_ID) %>% unique()
 
 AD_patient_claims <- outpatient %>% filter(DESYNPUF_ID %in% AD$DESYNPUF_ID)
@@ -34,11 +35,11 @@ non_AD <- outpatient %>% select(DESYNPUF_ID) %>% filter(!(DESYNPUF_ID %in% AD$DE
 non_AD_claims <- outpatient %>% filter(!(DESYNPUF_ID %in% AD$DESYNPUF_ID))
 
 
-## Let's take a sample of 50 AD patients, 50 other patients
+## Let's take a sample of 133 AD patients (all of them), 133 other patients
 
-set.seed(455)
-model_AD_IDs <- sample_n(AD, 50)
-model_non_IDs <- sample_n(non_AD, 50)
+set.seed(740)
+model_AD_IDs <- sample_n(AD, 133)
+model_non_IDs <- sample_n(non_AD, 133)
 
 model_AD <- AD_patient_claims %>% filter(DESYNPUF_ID %in% model_AD_IDs$DESYNPUF_ID)
 model_non <- non_AD_claims %>% filter(DESYNPUF_ID %in% model_non_IDs$DESYNPUF_ID)
@@ -86,9 +87,11 @@ rm(list = c("outpatient", "non_AD_claims", "non_AD", "model_non_codes", "model_n
 
 distinct_diagnoses <- total_model %>% ungroup %>% select(Diagnosis) %>% unique()
 
-distinct_diagnoses$index <- 1:length(distinct_diagnoses$Diagnosis)
+num_diagnoses <- length(distinct_diagnoses$Diagnosis)
 
-# So there are 527 unique diagnosis codes, which will be indexed from 1 to 527 
+distinct_diagnoses$index <- 1:num_diagnoses
+
+# So there are num_diagnoses unique codes, which will be indexed from 1 to num_diagnoses
 
 model_AD_IDs <- total_model %>% filter(AD == 1) %>% select(Patient_ID) %>% unique()
 model_non_IDs <- total_model %>% filter(AD == 0) %>% select(Patient_ID) %>% unique()
@@ -114,7 +117,7 @@ for(i in 1:length(split_model)){
   split_model[[i]] <- split_model[[i]] %>% ungroup() %>% select(Diagnosis) %>% t()
   
   while(length(split_model[[i]]) < max_claims){
-    split_model[[i]] <- append(split_model[[i]], 0)
+    split_model[[i]] <- append(split_model[[i]], 0, after = 0)
   }
   
 }
