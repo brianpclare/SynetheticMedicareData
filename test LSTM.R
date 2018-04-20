@@ -20,3 +20,8 @@ history <- model %>% fit(
 )
 
 summary(model)
+
+model %>% evaluate(input_train, y_train)
+
+y_train_hat <- model %>% predict_classes(input_train)
+table(y_train, y_train_hat)
