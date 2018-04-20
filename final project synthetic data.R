@@ -7,7 +7,6 @@
 # https://www.cms.gov/Research-Statistics-Data-and-Systems/Downloadable-Public-Use-Files/SynPUFs/Downloads/SynPUF_Codebook.pdf
 # page 7, page 
 library(tidyverse)
-library(dplyr)
 library(data.table)
 
 suppressWarnings(
@@ -103,9 +102,13 @@ for(i in 1:length(total_model$Diagnosis)){
   total_model$Diagnosis[i] <- y
 }
 
-total_model <- total_model %>% select(-Date)
+# total_model <- total_model %>% select(-Date)
 
-y_train <- total_model %>% summarize(n = max(AD)) %>% ungroup() %>% select(-Patient_ID) %>%
+total_model <- total_model %>% arrange(Patient_ID, Date)
+
+y_partial <- total_model %>% summarize(n = max(AD))
+
+y_train <- y_partial %>% ungroup() %>% select(-Patient_ID) %>%
   unlist() %>% unname()
 
 claim_counts <- total_model %>% select(Patient_ID) %>% summarize(count = n())
