@@ -82,11 +82,34 @@ rm(list = c("outpatient", "non_AD_claims", "non_AD", "model_non_codes", "model_n
             "AD", "AD_claim_codes", "AD_num_claims_by_patient", "AD_patient_codes", "model_AD_codes",
             "AD_patient_claims"))
 
+## Important parameter
+claim_limit = 100
+## Important parameter
+
+split <- total_model %>% split(.$Patient_ID)
+
+for(i in 1:length(split)){
+  split[[i]] <- split[[i]] %>% arrange(desc(Date))
+  num <- length(split[[i]]$Date)
+  
+  if(num > claim_limit){
+    split[[i]] <- tail(split[[i]], claim_limit)
+  }
+  
+  
+}
+
+total_model <- bind_rows(split)
+rm("split")
+
 # Step 4
 
 distinct_diagnoses <- total_model %>% ungroup %>% select(Diagnosis) %>% unique()
 
+## Important parameter
 num_diagnoses <- length(distinct_diagnoses$Diagnosis)
+## Important parameter
+
 
 distinct_diagnoses$index <- 1:num_diagnoses
 
@@ -112,12 +135,16 @@ y_train <- y_partial %>% ungroup() %>% select(-Patient_ID) %>%
   unlist() %>% unname()
 
 claim_counts <- total_model %>% select(Patient_ID) %>% summarize(count = n())
+
+## Important parameter (in real problems, will = claim_limit)
 max_claims <- max(claim_counts$count)
+## Important parameter
 
 split_model <- total_model %>% split(.$Patient_ID) %>% unname()
 
 for(i in 1:length(split_model)){
-  split_model[[i]] <- split_model[[i]] %>% ungroup() %>% select(Diagnosis) %>% t()
+  split_model[[i]] <- split_model[[i]] %>% ungroup() %>% select(Diagnosis) %>% 
+    t() %>% unname()
   
   while(length(split_model[[i]]) < max_claims){
     split_model[[i]] <- append(split_model[[i]], 0, after = 0)
